@@ -1,0 +1,14 @@
+# data/dataset.yaml
+# 3类：fire(0), human(1), smoke(2)
+
+path: E:/PythonProject/graduation_project_yolov5/yolo-service/data  # 数据集根目录
+
+train: train/images   # 对应 data/train/images
+val: valid/images     # 对应 data/valid/images
+test: test/images     # 对应 data/test/images
+
+nc: 3
+names:
+  0: fire
+  1: human
+  2: smoke
