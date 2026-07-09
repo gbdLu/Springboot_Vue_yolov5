@@ -1,0 +1,35 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/forest_fire_management?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 100MB
+  web:
+    resources:
+      static-locations: file:./uploads/
+
+# 文件上传路径
+upload:
+  path: ./uploads/
+  detection-url: http://localhost:8000/detect
+
+# JWT配置
+jwt:
+  secret: forest-fire-management-secret-key-2024
+  expiration: 86400000  # 24小时
+
+# MyBatis-Plus配置
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
