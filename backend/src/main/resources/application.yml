@@ -6,7 +6,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/forest_fire_management?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root
-    password: 123456
+    password: root
   servlet:
     multipart:
       max-file-size: 50MB
@@ -17,9 +17,8 @@ spring:
 
 # 文件上传路径
 upload:
-  path: ./uploads/
-  detection-url: http://localhost:8000/detect
-
+  path: E:/JavaProject/graduation_project/backend/uploads/
+  detection-url: http://localhost:8000/detect/upload
 # JWT配置
 jwt:
   secret: forest-fire-management-secret-key-2024

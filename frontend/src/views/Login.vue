@@ -7,12 +7,17 @@
           <el-input v-model="form.username" placeholder="用户名" prefix-icon="User" />
         </el-form-item>
         <el-form-item>
-          <el-input v-model="form.password" type="password" placeholder="密码" prefix-icon="Lock" />
+          <el-input v-model="form.password" type="password" placeholder="密码" prefix-icon="Lock" show-password />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleLogin" :loading="loading" style="width:100%">
             登 录
           </el-button>
+        </el-form-item>
+        <el-form-item>
+          <div style="text-align:center;width:100%">
+            还没有账号？<el-link type="primary" @click="router.push('/register')">去注册</el-link>
+          </div>
         </el-form-item>
       </el-form>
     </div>
@@ -27,9 +32,13 @@ import request from '@/utils/request'
 
 const router = useRouter()
 const loading = ref(false)
-const form = ref({ username: 'admin', password: '123456' })
+const form = ref({ username: '', password: '' })
 
 const handleLogin = async () => {
+  if (!form.value.username || !form.value.password) {
+    ElMessage.warning('请输入用户名和密码')
+    return
+  }
   loading.value = true
   try {
     const res = await request.post('/auth/login', form.value)
