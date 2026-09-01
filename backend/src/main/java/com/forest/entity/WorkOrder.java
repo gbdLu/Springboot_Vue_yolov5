@@ -36,4 +36,8 @@ public class WorkOrder {
     private String assignedToName;
     @TableField(exist = false)
     private String assignedByName;
+    @TableField(exist = false)
+    private String detectionImageOriginal;
+    @TableField(exist = false)
+    private String detectionImageResult;
 }

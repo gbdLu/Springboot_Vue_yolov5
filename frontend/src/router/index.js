@@ -14,10 +14,12 @@ const routes = [
       { path: '/dashboard', component: () => import('@/views/dashboard/Index.vue') },
       { path: '/forest', component: () => import('@/views/forest/ForestArea.vue') },
       { path: '/detection/upload', component: () => import('@/views/detection/ImageUpload.vue') },
+      { path: '/detection/realtime', component: () => import('@/views/detection/RealtimeMonitor.vue') },
       { path: '/detection/history', component: () => import('@/views/detection/DetectionHistory.vue') },
       { path: '/workorder', component: () => import('@/views/workorder/WorkOrderList.vue') },
       { path: '/knowledge', component: () => import('@/views/knowledge/KnowledgeList.vue') },
       { path: '/notification', component: () => import('@/views/notification/NotificationList.vue') },
+      { path: '/system/users', component: () => import('@/views/system/UserManage.vue') },
     ]
   }
 ]

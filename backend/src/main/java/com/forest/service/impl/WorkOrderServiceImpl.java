@@ -5,10 +5,14 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.forest.dto.DisposeDTO;
 import com.forest.dto.PageParam;
+import com.forest.entity.ForestArea;
+import com.forest.entity.User;
 import com.forest.entity.WorkOrder;
 import com.forest.exception.BusinessException;
 import com.forest.mapper.WorkOrderMapper;
+import com.forest.service.ForestAreaService;
 import com.forest.service.NotificationService;
+import com.forest.service.UserService;
 import com.forest.service.WorkOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,6 +26,12 @@ public class WorkOrderServiceImpl extends ServiceImpl<WorkOrderMapper, WorkOrder
 
     @Autowired
     private NotificationService notificationService;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private ForestAreaService forestAreaService;
 
     @Override
     public Page<WorkOrder> listWithPermission(PageParam pageParam, Integer orderStatus,
@@ -67,16 +77,30 @@ public class WorkOrderServiceImpl extends ServiceImpl<WorkOrderMapper, WorkOrder
         update.setDisposalDesc(dto.getDisposalDesc());
         update.setDisposalImages(dto.getDisposalImages());
         update.setDisposalAt(LocalDateTime.now());
-        update.setOrderStatus(3);  // 已处置
+        update.setOrderStatus(3);  // 已处置，待审核
         update.setUpdatedAt(LocalDateTime.now());
         baseMapper.updateById(update);
 
-        // 通知指派人（审核人）
+        // 获取巡林员姓名
+        User guard = userService.getById(userId);
+        String guardName = guard != null ? guard.getRealName() : "巡林员";
+
+        // 获取林区名称
+        String areaName = "未知林区";
+        if (order.getForestAreaId() != null) {
+            ForestArea area = forestAreaService.getById(order.getForestAreaId());
+            if (area != null) {
+                areaName = area.getAreaName();
+            }
+        }
+
+        // 通知指派人（林区管理员）进行审核
         if (order.getAssignedBy() != null) {
             Notification noti = new Notification();
             noti.setUserId(order.getAssignedBy());
             noti.setTitle("工单待审核");
-            noti.setContent("工单 " + order.getOrderNo() + " 已处置完成，请审核");
+            noti.setContent("巡林员" + guardName + "已完成工单" + order.getOrderNo()
+                    + "的处置（林区：" + areaName + "），请尽快审核");
             noti.setType("work_order");
             noti.setRelatedId(dto.getOrderId());
             noti.setIsRead(0);

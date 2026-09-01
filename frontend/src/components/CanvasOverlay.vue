@@ -43,8 +43,15 @@ const draw = () => {
 
     props.detections.forEach(det => {
       const [x1, y1, x2, y2] = det.bbox
-      const x = x1 * scaleX, y = y1 * scaleY
-      const w = (x2 - x1) * scaleX, h = (y2 - y1) * scaleY
+      // 边界检查：确保坐标在图片范围内
+      const clampedX1 = Math.max(0, Math.min(x1, img.width))
+      const clampedY1 = Math.max(0, Math.min(y1, img.height))
+      const clampedX2 = Math.max(0, Math.min(x2, img.width))
+      const clampedY2 = Math.max(0, Math.min(y2, img.height))
+      // 检查框是否有效
+      if (clampedX2 <= clampedX1 || clampedY2 <= clampedY1) return
+      const x = clampedX1 * scaleX, y = clampedY1 * scaleY
+      const w = (clampedX2 - clampedX1) * scaleX, h = (clampedY2 - clampedY1) * scaleY
       const color = COLORS[det.class_name] || '#FF0000'
       const label = LABELS[det.class_name] || det.class_name
       const confidence = ((det.confidence || 0) * 100).toFixed(1)

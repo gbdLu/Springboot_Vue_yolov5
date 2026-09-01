@@ -4,7 +4,7 @@
       <template #header>
         <div style="display:flex;justify-content:space-between;align-items:center">
           <span>🔔 消息通知</span>
-          <el-button @click="handleMarkAllRead">全部已读</el-button>
+          <el-button @click="handleMarkAllRead" :disabled="unreadCount === 0">全部已读</el-button>
         </div>
       </template>
 
@@ -40,7 +40,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, inject } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { getNotificationList, markAsRead, markAllRead, deleteNotification } from '@/api/notification'
@@ -51,30 +51,60 @@ const tableData = ref([])
 const total = ref(0)
 const pageNum = ref(1)
 const pageSize = ref(10)
+const unreadCount = ref(0)
+
+// 从父组件注入刷新未读数的方法
+const refreshUnreadCount = inject('refreshUnreadCount', null)
 
 const fetchData = async () => {
   loading.value = true
   try {
     const res = await getNotificationList({ pageNum: pageNum.value, pageSize: pageSize.value })
-    if (res.data.code === 200) { tableData.value = res.data.data.records; total.value = res.data.data.total }
+    if (res.data.code === 200) {
+      tableData.value = res.data.data.records
+      total.value = res.data.data.total
+      // 计算当前页未读数
+      unreadCount.value = tableData.value.filter(r => r.isRead === 0).length
+    }
   } finally { loading.value = false }
 }
 
+// 标记单条消息已读
 const handleRead = async (row) => {
   await markAsRead(row.id)
   row.isRead = 1
+  // 当前页未读数减1
+  unreadCount.value = Math.max(0, unreadCount.value - 1)
+  // 通知父组件刷新全局未读数
+  if (refreshUnreadCount) {
+    await refreshUnreadCount()
+  }
   ElMessage.success('已标为已读')
 }
 
+// 全部标为已读
 const handleMarkAllRead = async () => {
   await markAllRead()
+  // 当前页所有消息标记为已读
+  tableData.value.forEach(row => { row.isRead = 1 })
+  unreadCount.value = 0
+  // 通知父组件刷新全局未读数
+  if (refreshUnreadCount) {
+    await refreshUnreadCount()
+  }
   ElMessage.success('全部已读')
   fetchData()
 }
 
+// 删除消息
 const handleDelete = (row) => {
   ElMessageBox.confirm('确认删除？', '提示', { type: 'warning' }).then(async () => {
+    const wasUnread = row.isRead === 0
     await deleteNotification(row.id)
+    // 如果删除的是未读消息，通知父组件刷新
+    if (wasUnread && refreshUnreadCount) {
+      await refreshUnreadCount()
+    }
     ElMessage.success('删除成功')
     fetchData()
   })

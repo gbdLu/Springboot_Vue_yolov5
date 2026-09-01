@@ -11,7 +11,9 @@
       </template>
 
       <el-table :data="tableData" stripe v-loading="loading">
-        <el-table-column prop="id" label="ID" width="60" />
+        <el-table-column label="序号" width="60">
+          <template #default="{ $index }">{{ (pageNum - 1) * pageSize + $index + 1 }}</template>
+        </el-table-column>
         <el-table-column prop="forestAreaName" label="林区" />
         <el-table-column label="识别结果" width="200">
           <template #default="{ row }">
@@ -50,7 +52,7 @@
       </div>
       <div v-if="detail.id" style="margin-top:15px">
         <h4>识别结果图：</h4>
-        <img :src="`/api/detection/result-image/${detail.id}`" style="max-width:100%;border-radius:8px"
+        <img :src="`/api/detection/image/${detail.id}?type=result`" style="max-width:100%;border-radius:8px"
              @error="(e) => e.target.src = `/api/detection/image/${detail.id}`" />
       </div>
       <div v-if="detail.resultJson" style="margin-top:15px">
@@ -109,9 +111,18 @@ const parseDetections = (json) => {
 
 const handleDelete = (row) => {
   ElMessageBox.confirm('确认删除？', '提示', { type: 'warning' }).then(async () => {
-    const res = await deleteDetection(row.id)
-    if (res.data.code === 200) { ElMessage.success('删除成功'); fetchData() }
-  })
+    try {
+      const res = await deleteDetection(row.id)
+      if (res.data.code === 200) {
+        ElMessage.success('删除成功')
+        fetchData()
+      } else {
+        ElMessage.error(res.data.message || '删除失败')
+      }
+    } catch (e) {
+      ElMessage.error('删除失败：' + (e.response?.data?.message || e.message || '未知错误'))
+    }
+  }).catch(() => {})
 }
 
 onMounted(async () => {

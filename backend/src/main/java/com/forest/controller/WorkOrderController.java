@@ -117,11 +117,25 @@ public class WorkOrderController {
         update.setUpdatedAt(LocalDateTime.now());
         workOrderService.updateById(update);
 
-        // 发送消息通知被指派人
+        // 获取林区名称
+        String areaName = "未知林区";
+        if (order.getForestAreaId() != null) {
+            ForestArea area = forestAreaService.getById(order.getForestAreaId());
+            if (area != null) {
+                areaName = area.getAreaName();
+            }
+        }
+
+        // 获取指派人姓名
+        User manager = userService.getById(userId);
+        String managerName = manager != null ? manager.getRealName() : "管理员";
+
+        // 发送消息通知被指派的巡林员
         Notification noti = new Notification();
         noti.setUserId(dto.getAssignedTo());
         noti.setTitle("新工单指派");
-        noti.setContent("您有新的工单待处理，工单号：" + order.getOrderNo());
+        noti.setContent(managerName + "指派了新工单" + order.getOrderNo()
+                + "给您（林区：" + areaName + "，隐患类型：" + order.getHazardType() + "），请及时处理");
         noti.setType("work_order");
         noti.setRelatedId(dto.getOrderId());
         noti.setIsRead(0);
@@ -179,17 +193,27 @@ public class WorkOrderController {
             update.setOrderStatus(4);
             update.setClosedAt(LocalDateTime.now());
         } else {
-            // 审核退回 → 重新指派（已指派状态）
+            // 审核退回 → 重新处置
             update.setOrderStatus(2);
         }
         workOrderService.updateById(update);
 
-        // 通知处置人
+        // 获取审核人姓名
+        User reviewer = userService.getById(userId);
+        String reviewerName = reviewer != null ? reviewer.getRealName() : "管理员";
+
+        // 通知处置的巡林员
         if (order.getAssignedTo() != null) {
             Notification noti = new Notification();
             noti.setUserId(order.getAssignedTo());
-            noti.setTitle(dto.getReviewResult() == 1 ? "工单已归档" : "工单已退回");
-            noti.setContent("工单 " + order.getOrderNo() + (dto.getReviewResult() == 1 ? " 审核通过已归档" : " 审核退回，请重新处置"));
+            if (dto.getReviewResult() == 1) {
+                noti.setTitle("工单审核通过");
+                noti.setContent(reviewerName + "已审核通过工单" + order.getOrderNo() + "，该工单已办结");
+            } else {
+                noti.setTitle("工单审核退回");
+                noti.setContent(reviewerName + "退回了工单" + order.getOrderNo()
+                        + "，请重新处置。审核意见：" + (dto.getReviewComment() != null ? dto.getReviewComment() : "无"));
+            }
             noti.setType("work_order");
             noti.setRelatedId(dto.getOrderId());
             noti.setIsRead(0);
@@ -246,10 +270,15 @@ public class WorkOrderController {
      */
     @GetMapping("/my-orders")
     public Result<Map<String, Object>> getMyOrders(PageParam pageParam,
+                                                    @RequestParam(required = false) Integer orderStatus,
                                                     @RequestAttribute("userId") Integer userId) {
         Page<WorkOrder> page = new Page<>(pageParam.getPageNum(), pageParam.getPageSize());
         LambdaQueryWrapper<WorkOrder> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(WorkOrder::getAssignedTo, userId);
+        // 支持状态筛选
+        if (orderStatus != null) {
+            wrapper.eq(WorkOrder::getOrderStatus, orderStatus);
+        }
         wrapper.orderByDesc(WorkOrder::getCreatedAt);
         Page<WorkOrder> result = workOrderService.page(page, wrapper);
         fillWorkOrderInfo(result.getRecords());
@@ -305,6 +334,14 @@ public class WorkOrderController {
             if (order.getAssignedBy() != null) {
                 User user = userService.getById(order.getAssignedBy());
                 if (user != null) order.setAssignedByName(user.getRealName());
+            }
+            // 填充识别记录图片URL
+            if (order.getDetectionRecordId() != null) {
+                DetectionRecord record = detectionService.getById(order.getDetectionRecordId());
+                if (record != null) {
+                    order.setDetectionImageOriginal("/api/detection/image/" + record.getId());
+                    order.setDetectionImageResult("/api/detection/image/" + record.getId() + "?type=result");
+                }
             }
         });
     }

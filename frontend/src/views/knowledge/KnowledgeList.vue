@@ -39,7 +39,7 @@
     </el-card>
 
     <!-- 详情对话框 -->
-    <el-dialog v-model="detailVisible" :title="current.title" width="700px">
+    <el-dialog v-model="detailVisible" :title="current.title" width="700px" @close="fetchData">
       <div style="margin-bottom:10px;color:#999">
         <el-tag>{{ current.category }}</el-tag>
         <span style="margin-left:15px">👁 {{ current.viewCount }}</span>
@@ -74,7 +74,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getKnowledgeList, getKnowledgeDetail, addKnowledge, updateKnowledge, deleteKnowledge, getCategories } from '@/api/knowledge'
+import { getKnowledgeList, getKnowledgeDetail, incrementViewCount, addKnowledge, updateKnowledge, deleteKnowledge, getCategories } from '@/api/knowledge'
 
 const loading = ref(false)
 const tableData = ref([])
@@ -110,6 +110,11 @@ const fetchCategories = async () => {
 }
 
 const viewDetail = async (item) => {
+  // 立即更新本地浏览量
+  item.viewCount = (item.viewCount || 0) + 1
+  // 调用增量更新接口
+  incrementViewCount(item.id).catch(() => {})
+  // 获取详情
   const res = await getKnowledgeDetail(item.id)
   if (res.data.code === 200) { current.value = res.data.data; detailVisible.value = true }
 }

@@ -57,10 +57,20 @@ public class KnowledgeController {
     public Result<Knowledge> getDetail(@PathVariable Integer id) {
         Knowledge knowledge = knowledgeService.getById(id);
         if (knowledge == null) return Result.error("文章不存在");
-        // 增加浏览量
+        if (knowledge.getCreatedBy() != null) {
+            User user = userService.getById(knowledge.getCreatedBy());
+            if (user != null) knowledge.setCreatorName(user.getRealName());
+        }
+        return Result.success(knowledge);
+    }
+
+    @PutMapping("/view/{id}")
+    public Result<Integer> incrementViewCount(@PathVariable Integer id) {
+        Knowledge knowledge = knowledgeService.getById(id);
+        if (knowledge == null) return Result.error("文章不存在");
         knowledge.incrementViewCount();
         knowledgeService.updateById(knowledge);
-        return Result.success(knowledge);
+        return Result.success(knowledge.getViewCount());
     }
 
     @PostMapping("/add")

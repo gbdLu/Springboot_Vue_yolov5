@@ -4,6 +4,8 @@ export const getKnowledgeList = (params) => request.get('/knowledge/list', { par
 
 export const getKnowledgeDetail = (id) => request.get(`/knowledge/detail/${id}`)
 
+export const incrementViewCount = (id) => request.put(`/knowledge/view/${id}`)
+
 export const addKnowledge = (data) => request.post('/knowledge/add', data)
 
 export const updateKnowledge = (data) => request.put('/knowledge/update', data)
